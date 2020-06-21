@@ -2,7 +2,7 @@
 
 $TTL    {{ item.value.ttl|default(3600) }}
 @       IN      SOA    {{ item.value.ns_primary }}. {{ item.value.mail|replace('@', '.') }}. (
-  {{ item.value.serial }} ; Serial
+  {{ ansible_date_time.epoch }} ; Serial
   {{ item.value.refresh|default(14400) }} ; Refresh
   {{ item.value.retry|default(86400) }} ; Retry
   {{ item.value.expire|default(2419200) }} ; Expire
