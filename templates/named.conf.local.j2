@@ -1,4 +1,19 @@
 # {{ ansible_managed }}
+
+{% if bind_tsig is defined %}
+# tsig keys
+{% for zone, value in bind_tsig.items() %}
+## {{ zone }}
+{% for key in value %}
+key "{{ key.name }}" {
+  algorithm {{ key.algorithm }};
+  secret "{{ key.tsig_key }}";
+};
+{% endfor %}
+{% endfor %}
+{% endif %}
+
+# zones
 {% for zone, value in bind_zones.items() %}
 {% if 'state' not in value or value.state|lower not in ['disabled', 'absent'] %}
 
