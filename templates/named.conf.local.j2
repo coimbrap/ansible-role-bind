@@ -34,6 +34,23 @@ zone "{{ zone }}" IN {
     "none";
 {% endif %}
   };
+
+{% if bind_tsig is defined %}
+{% if zone in bind_tsig or bing_tsig.all is defined %}
+  update-policy {
+{% for elem in bind_tsig.items() %}
+{% if elem.0 == "all" or elem.0 == zone %}
+{% for key in elem.1 %}
+{% if key.certbot == 1 %}{# Prévoir update-policy-custom #}
+    grant {{ key.name }} name _acme-challenge.{{ zone }}. txt;
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endfor %}
+  };
+{% endif %}
+{% endif %}
+
 {% if 'options' in value %}
 {% for option,  opt_value in value.options.items() %}
   {{ option }} {% if opt_value == True %}yes{% elif opt_value == False %}no{% else %}{{ opt_value }}{% endif %};
