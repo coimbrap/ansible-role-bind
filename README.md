@@ -16,10 +16,10 @@ Install and configure bind with dnssec
 * `bind_options` - hash general bind options
 * `bind_zones` - the dns zones
 * `bind_dnssec` - hash with dnssec configuration
+* `bind_tsig` - the tsig keys
 * `bind_zones_subset` array to use in `extra-vars` with the list zones to update
 * `bind_listen_ipv4` - enable or disable ip v4 support (default: true)
 * `bind_listen_ipv6` - enable or disable ip v6 support (default: true)
-
 ## How to use
 
 * `group_vars/dns-server/bind`
