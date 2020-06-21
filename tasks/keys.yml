@@ -30,3 +30,7 @@
     file_ext:
       - ksk
       - zsk
+
+- name: create symblinks for KSK/ZSK keys
+  shell:
+    cmd: "ln -sf /etc/bind/keys/* /var/cache/bind"
