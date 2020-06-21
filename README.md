@@ -24,7 +24,7 @@ Install and configure bind with dnssec
 
 * `group_vars/dns-server/bind`
 
-```
+```yaml
 bind_options:
   server-id: '"1"'
 
@@ -54,7 +54,7 @@ bind_zones:
 
 * `group_vars/dns-server/dnssec`
 
-```
+```yaml
 bind_dnssec:
   test.local: 
     ksk:
@@ -82,9 +82,45 @@ bind_dnssec:
 
 ```
 
+* `group_vars/dns-server/tsig`
+
+```yaml
+bind_tsig:
+  all:
+    - name: ddns_certbot_global
+      certbot: 1
+      update_policy:
+      algorithm: "hmac-sha512"
+      tsig_key: !vault |
+         $ANSIBLE_VAULT;1.1;AES256
+         37455546613735396364323363323464393731626466616262613033656264343765306238353934
+         [...]
+         38658654654542113212121124322324342223243032623430353765646639366536663566653836
+         32643931393165643236
+
+  test.local:
+    - name: ddns_testlocal_certbot
+      certbot: 1
+      algorithm: "hmac-sha512"
+      tsig_key: !vault |
+         $ANSIBLE_VAULT;1.1;AES256
+         37455546613735396364323363323464393731626466616262613033656264343765306238353934
+         [...]
+         38658654654542113212121124322324342223243032623430353765646639366536663566653836
+         32643931393165643236
+    - name: ddns_testlocal_edit
+      algorithm: "hmac-sha512"
+      tsig_key: !vault |
+         $ANSIBLE_VAULT;1.1;AES256
+         37455546613735396364323363323464393731626466616262613033656264343765306238353934
+         [...]
+         38658654654542113212121124322324342223243032623430353765646639366536663566653836
+         32643931393165643236
+```
+
 * playbook
 
-```
+```yaml
 - hosts: dns-server
   roles:
     - bind 
