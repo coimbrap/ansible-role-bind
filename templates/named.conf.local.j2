@@ -41,7 +41,7 @@ zone "{{ zone }}" IN {
 {% for elem in bind_tsig.items() %}
 {% if elem.0 == "all" or elem.0 == zone %}
 {% for key in elem.1 %}
-{% if key.certbot == 1 %}{# Prévoir update-policy-custom #}
+{% if key.certbot is defined and key.certbot == 1 | default(false) %}{# Prévoir update-policy-custom #}
     grant {{ key.name }} name _acme-challenge.{{ zone }}. txt;
 {% endif %}
 {% endfor %}
