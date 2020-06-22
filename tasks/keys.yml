@@ -32,5 +32,19 @@
       - zsk
 
 - name: create symblinks for KSK/ZSK keys
-  shell:
-    cmd: "ln -sf /etc/bind/keys/* /var/cache/bind"
+shell:
+cmd: "ln -sf /etc/bind/keys/* /var/cache/bind"
+
+
+- name : find KSK/ZSK keys
+  find:
+    paths: /etc/bind/keys
+  register: keys
+
+- name: create symblinks for KSK/ZSK keys
+  file:
+    src: "{{ item.path }}"
+    dest: "/tmp/work/{{ item.path | basename }}"
+    state: link
+  with_items:
+    - "{{ keys.files }}"
