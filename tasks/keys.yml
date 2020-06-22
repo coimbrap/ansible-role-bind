@@ -39,7 +39,7 @@
 - name: create symblinks for KSK/ZSK keys
   file:
     src: "{{ item.path }}"
-    dest: "/tmp/work/{{ item.path | basename }}"
+    dest: "/var/cache/bind/{{ item.path | basename }}"
     state: link
   with_items:
     - "{{ keys.files }}"
