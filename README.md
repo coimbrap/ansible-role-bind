@@ -129,7 +129,7 @@ bind_tsig:
 - [x] TSIG key management for DynDNS (eg: certbot RFC2136)
 - [ ] Secure zones tranfers using TSIG 
 - [ ] Master/Slave configuration
-- [ ] Clean symblinks creation for KSK/ZSK keys
+- [x] Clean symblinks creation for KSK/ZSK keys
 - [ ] Remove `dnssec-keygen` calls and cron task
 - [ ] Manage properly `journal out of sync with zone` errors
 
