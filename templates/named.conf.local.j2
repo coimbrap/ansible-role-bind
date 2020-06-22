@@ -1,6 +1,7 @@
 # {{ ansible_managed }}
 
 {% set transfer={} %}
+{% set keys={} %}
 {% if bind_tsig is defined %}
 # tsig keys
 {% for zone, value in bind_tsig.items() %}
@@ -37,9 +38,9 @@ zone "{{ zone }}" IN {
 {% endfor %}
   };
 {% for elem in bind_tsig.items() %}
-{% if elem.0 == "all" or elem.0 == zone %}
+{% if elem.0 == zone %}
 {% for buff in elem.1 %}
-{% if buff.transfer is defined %}
+{% if buff.transfer is defined and buff.transfer == 1 %}
 {% set _ = transfer.update({'status':True}) %}
 {% endif %}
 {% endfor %}
@@ -47,13 +48,27 @@ zone "{{ zone }}" IN {
  # Zones transfers using TSIG
   allow-transfer {
 {% set _ = transfer.update({'status':False}) %}
+{% set _ = keys.update({'create':True}) %}
 {% endif %}
 {% for key in elem.1 %}
 {% if key.transfer is defined and key.transfer == 1 | default(False) %}
       key "{{key.name}}";
 {% endif %}
 {% endfor %}
+{% for buff in bind_tsig.all %}
+{% if buff.transfer is defined and buff.transfer == 1 | default(False) %}
+{% if keys.create is defined and not keys.create or keys.create is not defined %}
+ # Zones transfers using TSIG no
+  allow-transfer {
+{% set _ = keys.update({'create':True}) %}
+{% endif %}
+      key "{{bind_tsig.all.0.name}}";
+{% endif %}
+{% endfor %}
+{% if keys.create is defined and keys.create %}
   };
+{% set _ = keys.update({'create':False}) %}
+{% endif %}
 {% endif %}
 {% endfor %}
 {% endif %}
