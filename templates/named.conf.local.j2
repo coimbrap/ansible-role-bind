@@ -19,11 +19,9 @@ key "{{ key.name }}" {
 
 zone "{{ zone }}" IN {
   type master;
+  file "/etc/bind/zones/{{ zone }}/db";
 {% if zone in bind_dnssec %}
-  file "/etc/bind/zones/{{ zone }}/db";
   key-directory "/etc/bind/keys";
-{% else %}
-  file "/etc/bind/zones/{{ zone }}/db";
 {% endif %}
   allow-transfer {
 {% if 'allow_transfer' in value %}
