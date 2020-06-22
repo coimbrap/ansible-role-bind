@@ -31,11 +31,6 @@
       - ksk
       - zsk
 
-- name: create symblinks for KSK/ZSK keys
-shell:
-cmd: "ln -sf /etc/bind/keys/* /var/cache/bind"
-
-
 - name : find KSK/ZSK keys
   find:
     paths: /etc/bind/keys
