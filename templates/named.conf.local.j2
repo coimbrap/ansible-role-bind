@@ -20,7 +20,7 @@ key "{{ key.name }}" {
 zone "{{ zone }}" IN {
   type master;
 {% if zone in bind_dnssec %}
-  file "/etc/bind/zones/{{ zone }}/db.signed";
+  file "/etc/bind/zones/{{ zone }}/db";
   key-directory "/etc/bind/keys";
 {% else %}
   file "/etc/bind/zones/{{ zone }}/db";
