@@ -33,18 +33,6 @@
   register: zone
   notify: reload bind
 
-- name: dnssec sign
-  shell: >
-    dnssec-signzone -3 $(head -n 1000 /dev/urandom | sha1sum | cut -b 1-16) -A -N INCREMENT
-    -o {{ item.item.key }} -t /etc/bind/zones/{{ item.item.key }}/db
-  args:
-    chdir: /etc/bind/keys
-  loop: '{{ zone.results }}'
-  loop_control:
-    label: '{{ item.item.key }}'
-  when: item.item.key in bind_dnssec and item.changed
-  notify: reload bind
-
 - name: get zones files
   find:
     path: /etc/bind/zones
