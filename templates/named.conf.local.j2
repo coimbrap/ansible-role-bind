@@ -1,15 +1,13 @@
 # {{ ansible_managed }}
 
-{% set transfer={} %}
-{% set keys={} %}
 {% if bind_tsig is defined %}
 # tsig keys
-{% for zone, value in bind_tsig.items() %}
-## {{ zone }}
+{% for usage, value in bind_tsig.items() %}
+## {{ usage }}
 {% for key in value %}
 key "{{ key.name }}" {
   algorithm {{ key.algorithm }};
-  secret "{{ key.tsig_key }}";
+  secret "{{ key.secret }}";
 };
 {% endfor %}
 {% endfor %}
@@ -18,61 +16,49 @@ key "{{ key.name }}" {
 # zones
 {% for zone, value in bind_zones.items() %}
 {% if 'state' not in value or value.state|lower not in ['disabled', 'absent'] %}
+
 zone "{{ zone }}" IN {
   type master;
   file "/etc/bind/zones/{{ zone }}/db";
 {% if zone in bind_dnssec %}
   key-directory "/etc/bind/keys";
 {% endif %}
-{% if bind_tsig is defined %}
-{% if zone in bind_tsig or bing_tsig.all is defined %}
+
+  allow-transfer {
+{% if bind_tsig.transfer is defined %}
+{% set tsig_tr_list = (bind_tsig.transfer | selectattr("zone", "==", zone) | list + bind_tsig.transfer | selectattr("zone", "==", "wild") | list) %}
+{% else %}
+{% set tsig_tr_list = [] %}
+{% endif %}
+{% if (tsig_tr_list | length) %}
+{% for key in tsig_tr_list %}
+    key {{ key.name }};
+{% endfor %}
+{% else %}
+    "none";
+{% endif %}
+  };
+
+{% if bind_tsig.edition is defined %}
+{% set tsig_ed_list = (bind_tsig.edition | selectattr("zone", "==", zone) | list + bind_tsig.edition | selectattr("zone", "==", "wild") | list) %}
+{% else %}
+{% set tsig_ed_list = [] %}
+{% endif %}
+{% if (tsig_ed_list | length) %}
   update-policy {
-{% for elem in bind_tsig.items() %}
-{% if elem.0 == "all" or elem.0 == zone %}
-{% for key in elem.1 %}
-{% if key.certbot is defined and key.certbot == 1 | default(false) %}{# Prévoir update-policy-custom #}
+{% for key in tsig_ed_list %}
+{% if key.policy is defined %}
+{% if key.policy|lower == "certbot" %}
     grant {{ key.name }} name _acme-challenge.{{ zone }}. txt;
 {% endif %}
-{% endfor %}
+{% if key.policy|lower == "custom" %}
+    grant {{ key.name }} {{ key.policy_custom }};
+{% endif %}
 {% endif %}
 {% endfor %}
   };
-{% for elem in bind_tsig.items() %}
-{% if elem.0 == zone %}
-{% for buff in elem.1 %}
-{% if buff.transfer is defined and buff.transfer == 1 %}
-{% set _ = transfer.update({'status':True}) %}
 {% endif %}
-{% endfor %}
-{% if transfer.status is defined and transfer.status | default(False) %}
- # Zones transfers using TSIG
-  allow-transfer {
-{% set _ = transfer.update({'status':False}) %}
-{% set _ = keys.update({'create':True}) %}
-{% endif %}
-{% for key in elem.1 %}
-{% if key.transfer is defined and key.transfer == 1 | default(False) %}
-      key "{{key.name}}";
-{% endif %}
-{% endfor %}
-{% for buff in bind_tsig.all %}
-{% if buff.transfer is defined and buff.transfer == 1 | default(False) %}
-{% if keys.create is defined and not keys.create or keys.create is not defined %}
- # Zones transfers using TSIG no
-  allow-transfer {
-{% set _ = keys.update({'create':True}) %}
-{% endif %}
-      key "{{bind_tsig.all.0.name}}";
-{% endif %}
-{% endfor %}
-{% if keys.create is defined and keys.create %}
-  };
-{% set _ = keys.update({'create':False}) %}
-{% endif %}
-{% endif %}
-{% endfor %}
-{% endif %}
-{% endif %}
+
 {% if 'options' in value %}
 {% for option,  opt_value in value.options.items() %}
   {{ option }} {% if opt_value == True %}yes{% elif opt_value == False %}no{% else %}{{ opt_value }}{% endif %};
@@ -81,3 +67,4 @@ zone "{{ zone }}" IN {
 };
 {% endif %}
 {% endfor %}
+
