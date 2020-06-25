@@ -83,31 +83,53 @@ bind_dnssec:
 
 ```yaml
 bind_tsig:
-  all:
-    - name: ddns_certbot_global
-      certbot: 1
-      update_policy:
+  transfer:
+    - name: tsigkey_global
+      zone: wild
       algorithm: "hmac-sha512"
-      tsig_key: !vault |
+      secret:  !vault |
+         $ANSIBLE_VAULT;1.1;AES256
+         37455546613735396364323363323464393731626466616262613033656264343765306238353934
+         [...]
+         38658654654542113212121124322324342223243032623430353765646639366536663566653836
+         32643931393165643236
+    - name: tsigkey_test
+      zone: test.local
+      algorithm: "hmac-sha512"
+      secret:  !vault |
          $ANSIBLE_VAULT;1.1;AES256
          37455546613735396364323363323464393731626466616262613033656264343765306238353934
          [...]
          38658654654542113212121124322324342223243032623430353765646639366536663566653836
          32643931393165643236
 
-  test.local:
-    - name: ddns_testlocal_certbot
-      certbot: 1
+  edition:
+    - name: ddns_certbot_test
+      zone: test.local
+      policy: certbot
       algorithm: "hmac-sha512"
-      tsig_key: !vault |
+      secret:  !vault |
          $ANSIBLE_VAULT;1.1;AES256
          37455546613735396364323363323464393731626466616262613033656264343765306238353934
          [...]
          38658654654542113212121124322324342223243032623430353765646639366536663566653836
          32643931393165643236
-    - name: ddns_testlocal_edit
+    - name: ddns_toto_global
+      zone: test.local
+      policy: custom
+      policy_custom: subzone ANY
       algorithm: "hmac-sha512"
-      tsig_key: !vault |
+      secret:  !vault |
+         $ANSIBLE_VAULT;1.1;AES256
+         37455546613735396364323363323464393731626466616262613033656264343765306238353934
+         [...]
+         38658654654542113212121124322324342223243032623430353765646639366536663566653836
+         32643931393165643236
+    - name: ddns_certbot_global
+      policy: certbot
+      zone: wild
+      algorithm: "hmac-sha512"
+      secret: !vault |
          $ANSIBLE_VAULT;1.1;AES256
          37455546613735396364323363323464393731626466616262613033656264343765306238353934
          [...]
