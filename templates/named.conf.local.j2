@@ -13,6 +13,17 @@ key "{{ key.name }}" {
 {% endfor %}
 {% endif %}
 
+{% if bind_acl is defined %}
+# acl
+{% for acl, hosts in bind_acl.items() %}
+acl {{ acl }} {
+{% for host in hosts %}
+ {{ host }};
+{% endfor %}
+};
+{% endfor %}
+{% endif %}
+
 # zones
 {% for zone, value in bind_zones.items() %}
 {% if 'state' not in value or value.state|lower not in ['disabled', 'absent'] %}
