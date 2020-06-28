@@ -167,11 +167,12 @@ bind_acl:
 ### Todo list
 
 - [x] TSIG key management for DynDNS (eg: certbot RFC2136)
-- [ ] Secure zones tranfers using TSIG 
-- [ ] Master/Slave configuration
+- [x] Secure zones tranfers using TSIG 
 - [x] Clean symblinks creation for KSK/ZSK keys
-- [ ] Remove `dnssec-keygen` calls and cron task
-- [ ] Manage properly `journal out of sync with zone` errors
+- [x] Remove `dnssec-keygen` calls and cron task
+- [x] Manage properly `journal out of sync with zone` errors
+- [ ] Master/Slave configuration
+- [ ] Multiple views management
 
 
 ### Test with molecule and docker
