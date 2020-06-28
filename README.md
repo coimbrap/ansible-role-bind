@@ -137,6 +137,24 @@ bind_tsig:
          32643931393165643236
 ```
 
+* `group_vars/dns-server/acl`
+
+```yaml
+bind_acl:
+  safe:
+    - "localhost"
+    - "10.0.0.0/8"
+    - "::1/128"
+    - "fd20:902:16:3454/64"
+  forwarders:
+    - "10.0.0.124"
+    - "10.0.0.125"
+    - "fd20:902:16:3454::babe"
+    - "fd20:902:16:3454::c0de"
+  external:
+    - "!127.0.0.1"
+```
+
 * playbook
 
 ```yaml
