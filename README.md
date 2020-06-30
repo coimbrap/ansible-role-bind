@@ -29,7 +29,6 @@ bind_zones:
   test.local:
     ns_primary: ns1.test.local
     mail: root@test.local
-    serial: 2017092202
     options:
       auto-dnssec: maintain
       inline-signing: yes
