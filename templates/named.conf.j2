@@ -61,19 +61,24 @@ acl {{ acl }} {
 };
 {% endfor %}
 {% endif %}
-
-## Zones
-{% for zone, value in bind_zones.items() %}
+##VIEW
+{% for view, value in bind_views.items() %}
 {% if 'state' not in value or value.state|lower not in ['disabled', 'absent'] %}
 
-zone "{{ zone }}" IN {
-  type master;
-  file "/etc/bind/zones/{{ zone }}/db";
-{% if zone in bind_dnssec %}
-  key-directory "/etc/bind/keys";
-{% endif %}
+view {{ view }} {
+  match-clients { {% if value.acl is defined %}{{ value.acl }}{% else %}{{ view }}{% endif %}; };
+  allow-recursion { {{ value.recursion }}; };
+  allow-query { {% if value.acl is defined %}{{ value.acl }}{% else %}{{ view }}{% endif %}; };
+{% for zon in value.zones %}
+{% for zone, param in zon.items() %}
 
-  allow-transfer {
+  zone "{{ zone }}" {
+    type master;
+    file "/etc/bind/zones/{{ view }}/{{ zone }}/db";
+{% if zone in bind_dnssec %}
+    key-directory "/etc/bind/keys";
+{% endif %}
+    allow-transfer {
 {% if bind_tsig.transfer is defined %}
 {% set tsig_tr_list = (bind_tsig.transfer | selectattr("zone", "==", zone) | list + bind_tsig.transfer | selectattr("zone", "==", "wild") | list) %}
 {% else %}
@@ -81,38 +86,46 @@ zone "{{ zone }}" IN {
 {% endif %}
 {% if (tsig_tr_list | length) %}
 {% for key in tsig_tr_list %}
-    key {{ key.name }};
+      key {{ key.name }};
 {% endfor %}
 {% else %}
-    "none";
+      "none";
 {% endif %}
-  };
-
+    };
 {% if bind_tsig.edition is defined %}
 {% set tsig_ed_list = (bind_tsig.edition | selectattr("zone", "==", zone) | list + bind_tsig.edition | selectattr("zone", "==", "wild") | list) %}
 {% else %}
 {% set tsig_ed_list = [] %}
 {% endif %}
 {% if (tsig_ed_list | length) %}
-  update-policy {
+    update-policy {
 {% for key in tsig_ed_list %}
 {% if key.policy is defined %}
 {% if key.policy|lower == "certbot" %}
-    grant {{ key.name }} name _acme-challenge.{{ zone }}. txt;
+      grant {{ key.name }} name _acme-challenge.{{ zone }}. txt;
 {% endif %}
 {% if key.policy|lower == "custom" %}
-    grant {{ key.name }} {{ key.policy_custom }};
+      grant {{ key.name }} {{ key.policy_custom }};
 {% endif %}
 {% endif %}
 {% endfor %}
+    };
+{% endif %}
+{% if 'options' in param %}
+{% for option,  opt_value in param.options.items() %}
+    {{ option }} {% if opt_value == True %}yes{% elif opt_value == False %}no{% else %}{{ opt_value }}{% endif %};
+{% endfor %}
+{% endif %}
+  };
+{% if param.reverse is defined and param.reverse and param.ipv4 is defined %}
+
+  zone "{{ param.ipv4.split('.')[0:3] | reverse | join('.') }}.in-addr.arpa" {
+    type master;
+    file "/etc/bind/zones/{{ view }}/{{ zone }}/rev";
   };
 {% endif %}
-
-{% if 'options' in value %}
-{% for option,  opt_value in value.options.items() %}
-  {{ option }} {% if opt_value == True %}yes{% elif opt_value == False %}no{% else %}{{ opt_value }}{% endif %};
 {% endfor %}
-{% endif %}
+{% endfor %}
 };
 {% endif %}
 {% endfor %}
