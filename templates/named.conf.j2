@@ -1,7 +1,5 @@
 # {{ ansible_managed }}
 
-include "/etc/bind/named.conf.default-zones";
-
 ## Options
 options {
   directory "/var/cache/bind";
@@ -22,16 +20,23 @@ options {
 
 ## Logging
 logging {
-  channel security_file {
-    file "/var/log/named/security.log" versions 3 size 30m;
+  channel query_log {
+    file "/var/log/named/query.log";
+    severity debug 10;
+    print-time yes;
+  };
+  channel error_log {
+    file "/var/log/named/error.log" versions 3 size 30m;
     severity dynamic;
     print-time yes;
   };
+  category queries {
+    query_log;
+  };
   category security {
-    security_file;
+    error_log;
   };
 };
-
 
 {% if bind_tsig is defined %}
 ## TSIG keys
@@ -111,4 +116,3 @@ zone "{{ zone }}" IN {
 };
 {% endif %}
 {% endfor %}
-
