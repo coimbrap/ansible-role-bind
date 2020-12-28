@@ -1,52 +1,55 @@
 ---
-- name: set fact bind_zone_play if it empty
+- name: set fact bind_views_play if it empty
   set_fact:
-    bind_zones_play: '{{ bind_zones_play|default([]) + [ item ] }}'
-  loop: '{{ bind_zones|dict2items }}'
+    bind_views_play: '{{ bind_views_play|default([]) + [ item ] }}'
+  loop: '{{ bind_views | dict2items }}'
   loop_control:
     label: '{{ item.key }}'
-  when: >
-    (item.value.state is not defined or item.value.state != 'absent')
-    and (bind_zones_subset is not defined or item.key in bind_zones_subset)
 
-- name: create zone folder
+- name: create views folder
   file:
-    path: '/etc/bind/zones/{{ item.key }}'
+    path: '/etc/bind/zones/{{ item.0.key }}/{{ item.1|first }}'
     owner: bind
     group: bind
     mode: 0755
     state: directory
   loop_control:
-    label: '{{ item.key }}'
-  loop: '{{ bind_zones_play }}'
+    label: '{{ item.0.key + "/" + item.1|first }}'
+  with_subelements:
+    - "{{ bind_views_play }}"
+    - value.zones
 
 - name: copy zone files
   template:
     src: db.j2
-    dest: '/etc/bind/zones/{{ item.key }}/db'
+    dest: '/etc/bind/zones/{{ item.0.key }}/{{ item.1|first }}/db'
     owner: root
     group: root
     mode: 0644
-  loop: '{{ bind_zones_play }}'
   loop_control:
-    label: '{{ item.key }}'
+    label: '{{ item.0.key + "/" +  item.1|first }}'
+  with_subelements:
+    - "{{ bind_views_play }}"
+    - value.zones
   register: zone
   notify: reload bind
 
-- name: get zones files
-  find:
-    path: /etc/bind/zones
-    file_type: directory
-    recurse: no
-  register: zone_folders
-
-- name: delete old zone file
-  file:
-    path: '{{ item.path }}'
-    state: absent
-  loop: '{{ zone_folders.files }}'
+- name: copy zone reverse files
+  template:
+    src: rev.j2
+    dest: '/etc/bind/zones/{{ item.0.key }}/{{ item.1|first }}/rev'
+    owner: root
+    group: root
+    mode: 0644
   loop_control:
-    label: '{{ item.path|basename }}'
+    label: '{{ item.0.key + "/" +  item.1|first }}'
+  with_subelements:
+    - "{{ bind_views_play }}"
+    - value.zones
+  register: zone
   when: >
-    item.path|basename not in bind_zones or
-    ('state' in bind_zones[item.path|basename] and bind_zones[item.path|basename].state == 'absent')
+    ((item.1 | dict2items).0.value.reverse is defined and (item.1 | dict2items).0.value.reverse|lower == 'true')
+  notify: reload bind
+
+#TODO - add cleanup of unused zone
+# - option to disable a zone in a view
