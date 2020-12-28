@@ -1,0 +1,19 @@
+; {{ ansible_managed }}
+{% set zone = (item.1 | dict2items).0.value %}
+
+$TTL    {{ zone.ttl|default(3600) }}
+@       IN      SOA    {{ zone.ns_primary }}. {{ zone.mail|replace('@', '.') }}. (
+  {{ ansible_date_time.epoch }} ; Serial
+  {{ zone.refresh|default(14400) }} ; Refresh
+  {{ zone.retry|default(86400) }} ; Retry
+  {{ zone.expire|default(2419200) }} ; Expire
+  {{ zone.negative_cache|default(86400) }} ; Negative Cache TTL
+)
+
+{% for record in zone.records %}
+{% if record.type|upper == 'A' %}
+{{ record.value.split('.')[3] }} IN PTR {% if record.name != '@' %}{{ record.name }}.{% endif %}{{ item.1|first }}.
+{% elif record.type|upper == 'NS' %}
+{{ record.name }} IN NS {{ record.value }}
+{% endif %}
+{% endfor %}
