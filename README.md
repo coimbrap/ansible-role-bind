@@ -22,6 +22,21 @@ Install and configure bind with dnssec
 * `bind_listen_ipv6` - enable or disable ip v6 support (default: true)
 ## How to use
 
+### Keys generation
+
+#### DNSSEC
+
+- ZSK : `dnssec-keygen -a ECDSAP256SHA256 devo.re`
+- KSK : `dnssec-keygen -a ECDSAP256SHA256 -f KSK devo.re`
+
+Encrypt `.private` content and use it for `private_key` in vars
+
+#### TSIG
+
+For each key : `dnssec-keygen -a HMAC-SHA512 -b 512 -n devo.re`
+
+### Vars
+
 * `group_vars/dns-server/bind`
 
 ```yaml
