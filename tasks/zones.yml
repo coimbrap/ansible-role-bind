@@ -19,6 +19,15 @@
     - "{{ bind_views_play }}"
     - value.zones
 
+- name: 'cleanup .jnl'
+  shell: >
+    rm -f /etc/bind/zones/{{ item.0.key }}/{{ item.1|first }}/*.jnl
+  loop_control:
+    label: '{{ item.0.key + "/" + item.1|first }}'
+  with_subelements:
+    - "{{ bind_views_play }}"
+    - value.zones
+
 - name: copy zone files
   template:
     src: db.j2
