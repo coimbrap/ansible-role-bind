@@ -9,7 +9,15 @@ $TTL    {{ zone.ttl|default(3600) }}
   {{ zone.expire|default(2419200) }} ; Expire
   {{ zone.negative_cache|default(86400) }} ; Negative Cache TTL
 )
-
+{% if zone.r_records is defined and zone.r_records %}
+{% for r_record in zone.r_records %}
+{% if r_record.type|upper == 'A' %}
+{{ r_record.value.split('.')[3] }} IN PTR {% if r_record.name != '@' %}{{ r_record.name }}.{% endif %}{{ item.1|first }}.
+{% elif r_record.type|upper == 'NS' %}
+{{ r_record.name }} IN NS {{ r_record.value }}
+{% endif %}
+{% endfor %}
+{% else %}
 {% for record in zone.records %}
 {% if record.type|upper == 'A' %}
 {{ record.value.split('.')[3] }} IN PTR {% if record.name != '@' %}{{ record.name }}.{% endif %}{{ item.1|first }}.
@@ -17,3 +25,4 @@ $TTL    {{ zone.ttl|default(3600) }}
 {{ record.name }} IN NS {{ record.value }}
 {% endif %}
 {% endfor %}
+{% endif %}

@@ -26,8 +26,8 @@ Install and configure bind with dnssec
 
 #### DNSSEC
 
-- ZSK : `dnssec-keygen -a ECDSAP256SHA256 devo.re`
-- KSK : `dnssec-keygen -a ECDSAP256SHA256 -f KSK devo.re`
+- ZSK : `dnssec-keygen -a ECDSAP256SHA256 -n ZONE devo.re`
+- KSK : `dnssec-keygen -a ECDSAP256SHA256 -f KSK -n ZONE devo.re`
 
 Encrypt `.private` content and use it for `private_key` in vars
 
