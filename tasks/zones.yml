@@ -42,6 +42,7 @@
     - value.zones
   register: zone
   notify: reload bind
+  when: 'bind_role|lower == "master"'
 
 - name: copy zone reverse files
   template:
@@ -57,7 +58,7 @@
     - value.zones
   register: zone
   when: >
-    ((item.1 | dict2items).0.value.reverse is defined and (item.1 | dict2items).0.value.reverse|lower == 'true')
+    (((item.1 | dict2items).0.value.reverse is defined and (item.1 | dict2items).0.value.reverse|lower == 'true')) and (bind_role|lower == "master")
   notify: reload bind
 
 #TODO - add cleanup of unused zone
