@@ -1,65 +1,135 @@
 ---
-- name: set fact bind_views_play if it empty
-  set_fact:
-    bind_views_play: '{{ bind_views_play|default([]) + [ item ] }}'
-  loop: '{{ bind_views | dict2items }}'
-  loop_control:
-    label: '{{ item.key }}'
 
-- name: create views folder
-  file:
-    path: '/etc/bind/zones/{{ item.0.key }}/{{ item.1|first }}'
-    owner: bind
-    group: bind
-    mode: 0755
-    state: directory
-  loop_control:
-    label: '{{ item.0.key + "/" + item.1|first }}'
-  with_subelements:
-    - "{{ bind_views_play }}"
-    - value.zones
+- name: zones
+  block:
+    - name: set fact bind_zone_play if it empty
+      set_fact:
+        bind_zones_play: '{{ bind_zones_play|default([]) + [ item ] }}'
+      loop: '{{ bind_zones|dict2items }}'
+      loop_control:
+        label: '{{ item.key }}'
+      when: >
+        (item.value.state is not defined or item.value.state != 'absent')
+        and (bind_zones_subset is not defined or item.key in bind_zones_subset)
 
-- name: 'cleanup .jnl'
-  shell: >
-    rm -f /etc/bind/zones/{{ item.0.key }}/{{ item.1|first }}/*.jnl
-  loop_control:
-    label: '{{ item.0.key + "/" + item.1|first }}'
-  with_subelements:
-    - "{{ bind_views_play }}"
-    - value.zones
+    - name: create zone folder
+      file:
+        path: '/etc/bind/zones/{{ item.key }}'
+        owner: bind
+        group: bind
+        mode: 0755
+        state: directory
+      loop_control:
+        label: '{{ item.key }}'
+      loop: '{{ bind_zones_play }}'
+      when: bind_zones is defined
 
-- name: copy zone files
-  template:
-    src: db.j2
-    dest: '/etc/bind/zones/{{ item.0.key }}/{{ item.1|first }}/db'
-    owner: root
-    group: root
-    mode: 0644
-  loop_control:
-    label: '{{ item.0.key + "/" +  item.1|first }}'
-  with_subelements:
-    - "{{ bind_views_play }}"
-    - value.zones
-  register: zone
-  notify: reload bind
-  when: 'bind_role|lower == "master"'
+    - name: 'cleanup zones .jnl'
+      shell: >
+        rm -f /etc/bind/zones/{{ item.key }}/*.jnl
+      loop_control:
+        label: '{{ item.0.key + "/" + item.1|first }}'
+      loop: '{{ bind_zones_play }}'
+      loop_control:
+        label: '{{ item.key }}'
+      when: bind_zones is defined
 
-- name: copy zone reverse files
-  template:
-    src: rev.j2
-    dest: '/etc/bind/zones/{{ item.0.key }}/{{ item.1|first }}/rev'
-    owner: root
-    group: root
-    mode: 0644
-  loop_control:
-    label: '{{ item.0.key + "/" +  item.1|first }}'
-  with_subelements:
-    - "{{ bind_views_play }}"
-    - value.zones
-  register: zone
-  when: >
-    (((item.1 | dict2items).0.value.reverse is defined and (item.1 | dict2items).0.value.reverse|lower == 'true')) and (bind_role|lower == "master")
-  notify: reload bind
+    - name: copy zone files
+      template:
+        src: db.j2
+        dest: '/etc/bind/zones/{{ item.key }}/db'
+        owner: root
+        group: root
+        mode: 0644
+      loop: '{{ bind_zones_play }}'
+      loop_control:
+        label: '{{ item.key }}'
+      register: zone
+      when: ((bind_role|lower == "master") and (bind_zones is defined))
+
+    - name: copy zone reverse files
+      template:
+        src: rev.j2
+        dest: '/etc/bind/zones/{{ item.key }}/rev'
+        owner: root
+        group: root
+        mode: 0644
+      loop: '{{ bind_zones_play }}'
+      loop_control:
+        label: '{{ item.key }}'
+      register: zone
+      when: >
+        (bind_role|lower == "master") and (item.value.reverse is defined and item.value.reverse) and (bind_zones is defined)
+  when: bind_zones is defined
+
+
+- name: views
+  block:
+    - name: set fact bind_views_play if it empty
+      set_fact:
+        bind_views_play: '{{ bind_views_play|default([]) + [ item ] }}'
+      loop: '{{ bind_views | dict2items }}'
+      loop_control:
+        label: '{{ item.key }}'
+      when: bind_views is defined
+
+    - name: create views folders
+      file:
+        path: '/etc/bind/zones/{{ item.0.key }}/{{ item.1|first }}'
+        owner: bind
+        group: bind
+        mode: 0755
+        state: directory
+      loop_control:
+        label: '{{ item.0.key + "/" + item.1|first }}'
+      with_subelements:
+        - "{{ bind_views_play }}"
+        - value.zones
+      when: bind_views is defined
+
+    - name: 'cleanup views .jnl'
+      shell: >
+        rm -f /etc/bind/zones/{{ item.0.key }}/{{ item.1|first }}/*.jnl
+      loop_control:
+        label: '{{ item.0.key + "/" + item.1|first }}'
+      with_subelements:
+        - "{{ bind_views_play }}"
+        - value.zones
+      when: bind_views is defined
+
+    - name: copy zone of views files
+      template:
+        src: db.j2
+        dest: '/etc/bind/zones/{{ item.0.key }}/{{ item.1|first }}/db'
+        owner: root
+        group: root
+        mode: 0644
+      loop_control:
+        label: '{{ item.0.key + "/" +  item.1|first }}'
+      with_subelements:
+        - "{{ bind_views_play }}"
+        - value.zones
+      register: zone
+      notify: reload bind
+      when: ((bind_role|lower == "master") and (bind_views is defined))
+
+    - name: copy zone view reverse files
+      template:
+        src: rev.j2
+        dest: '/etc/bind/zones/{{ item.0.key }}/{{ item.1|first }}/rev'
+        owner: root
+        group: root
+        mode: 0644
+      loop_control:
+        label: '{{ item.0.key + "/" +  item.1|first }}'
+      with_subelements:
+        - "{{ bind_views_play }}"
+        - value.zones
+      register: zone
+      when: >
+         (bind_views is defined) and (((item.1 | dict2items).0.value.reverse is defined and (item.1 | dict2items).0.value.reverse|lower == 'true')) and (bind_role|lower == "master")
+      notify: reload bind
+  when: bind_views is defined
 
 #TODO - add cleanup of unused zone
 # - option to disable a zone in a view

@@ -1,5 +1,9 @@
 ; {{ ansible_managed }}
+{% if item.1 is defined %}
 {% set zone = (item.1 | dict2items).0.value %}
+{% else %}
+{% set zone = item.value %}
+{% endif %}
 
 $TTL    {{ zone.ttl|default(3600) }}
 @       IN      SOA    {{ zone.ns_primary }}. {{ zone.mail|replace('@', '.') }}. (

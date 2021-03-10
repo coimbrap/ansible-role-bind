@@ -1,7 +1,13 @@
 ; {{ ansible_managed }}
+{% if item.1 is defined %}
 {% set zone = (item.1 | dict2items).0.value %}
+{% set zone_name =  item.1|first %}
+{% else %}
+{% set zone = item.value %}
+{% set zone_name =  item.key %}
+{% endif %}
 
-$TTL    {{ zone.ttl|default(3600) }}
+$TTL {{ zone.ttl|default(3600) }}
 @       IN      SOA    {{ zone.ns_primary }}. {{ zone.mail|replace('@', '.') }}. (
   {{ ansible_date_time.epoch }} ; Serial
   {{ zone.refresh|default(14400) }} ; Refresh
@@ -12,7 +18,7 @@ $TTL    {{ zone.ttl|default(3600) }}
 {% if zone.r_records is defined and zone.r_records %}
 {% for r_record in zone.r_records %}
 {% if r_record.type|upper == 'A' %}
-{{ r_record.value.split('.')[3] }} IN PTR {% if r_record.name != '@' %}{{ r_record.name }}.{% endif %}{{ item.1|first }}.
+{{ r_record.value.split('.')[3] }} IN PTR {% if r_record.name != '@' %}{{ r_record.name }}.{% endif %}{{ zone_name }}.
 {% elif r_record.type|upper == 'NS' %}
 {{ r_record.name }} IN NS {{ r_record.value }}
 {% endif %}
@@ -20,7 +26,7 @@ $TTL    {{ zone.ttl|default(3600) }}
 {% else %}
 {% for record in zone.records %}
 {% if record.type|upper == 'A' %}
-{{ record.value.split('.')[3] }} IN PTR {% if record.name != '@' %}{{ record.name }}.{% endif %}{{ item.1|first }}.
+{{ record.value.split('.')[3] }} IN PTR {% if record.name != '@' %}{{ record.name }}.{% endif %}{{ zone_name }}.
 {% elif record.type|upper == 'NS' %}
 {{ record.name }} IN NS {{ record.value }}
 {% endif %}
