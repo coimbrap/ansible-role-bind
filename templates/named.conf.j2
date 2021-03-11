@@ -209,8 +209,11 @@ view {{ view }} {
 {% if 'state' not in value or value.state|lower not in ['disabled', 'absent'] %}
 
 zone "{{ zone }}" IN {
-  type master;
+  type {{ bind_role|lower }};
   file "/etc/bind/zones/{{ zone }}/db";
+{% if bind_role|lower == "slave" %}
+  masters { {% for master in bind_masters %}{{ master.ip }}; {% endfor %}};
+{% endif %}
 {% if zone in bind_dnssec %}
   key-directory "/etc/bind/keys";
 {% endif %}
@@ -229,13 +232,13 @@ zone "{{ zone }}" IN {
     "none";
 {% endif %}
   };
-
 {% if bind_tsig.edition is defined and bind_role|lower == "master" %}
 {% set tsig_ed_list = (bind_tsig.edition | selectattr("zone", "==", zone) | list + bind_tsig.edition | selectattr("zone", "==", "wild") | list) %}
 {% else %}
 {% set tsig_ed_list = [] %}
 {% endif %}
 {% if (tsig_ed_list | length) %}
+
   update-policy {
 {% for key in tsig_ed_list %}
 {% if key.policy is defined %}
@@ -306,7 +309,7 @@ zone "{{ value.ipv4.split('.')[0:3] | reverse | join('.') }}.in-addr.arpa" IN {
 
 {% if 'options' in value %}
 {% for option,  opt_value in value.options.items() %}
-    {{ option }} {% if opt_value == True %}yes{% elif opt_value == False %}no{% else %}{{ opt_value }}{% endif %};
+  {{ option }} {% if opt_value == True %}yes{% elif opt_value == False %}no{% else %}{{ opt_value }}{% endif %};
 {% endfor %}
 {% endif %}
 {% endif %}
